@@ -1,0 +1,64 @@
+name: Build and deploy backend to Railway
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: Cache Maven packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.m2/repository
+          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
+          restore-keys: |
+            ${{ runner.os }}-maven-
+
+      - name: Build (Maven)
+        run: mvn -B -DskipTests package --file backend/my-notes-backend/pom.xml
+
+      - name: Run unit tests
+        run: mvn -B test --file backend/my-notes-backend/pom.xml
+
+      - name: Install Railway CLI
+        run: |
+          curl -fsSL https://railway.app/install.sh | sh
+          export PATH="$HOME/.railway/bin:$PATH"
+          railway --version
+
+      - name: Authenticate to Railway
+        env:
+          RAILWAY_API_KEY: ${{ secrets.RAILWAY_API_KEY }}
+        run: |
+          export PATH="$HOME/.railway/bin:$PATH"
+          railway login --apiKey "$RAILWAY_API_KEY"
+
+      - name: Deploy to Railway
+        env:
+          RAILWAY_PROJECT: ${{ secrets.RAILWAY_PROJECT_ID }}
+          RAILWAY_SERVICE: ${{ secrets.RAILWAY_SERVICE_NAME }}
+        run: |
+          export PATH="$HOME/.railway/bin:$PATH"
+          # Link to project (optional if already linked in Railway dashboard)
+          if [ -n "$RAILWAY_PROJECT" ]; then
+            railway link "$RAILWAY_PROJECT" || true
+          fi
+          # Deploy the current directory (backend); ensure your service is configured in Railway
+          cd backend/my-notes-backend
+          railway up --service "$RAILWAY_SERVICE" --detach || railway deploy --service "$RAILWAY_SERVICE" || true
+
+      - name: Post-deploy message
+        run: echo "Deployment request sent to Railway. Monitor Railway dashboard for status."

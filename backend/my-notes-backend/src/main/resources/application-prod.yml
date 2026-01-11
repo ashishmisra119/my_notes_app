@@ -1,0 +1,43 @@
+# Production configuration — reads DB connection from environment variables
+spring:
+  datasource:
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:mydb}
+    driver-class-name: org.postgresql.Driver
+    username: ${DB_USER:postgres}
+    password: ${DB_PASSWORD:postgres}
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus,metrics
+  endpoint:
+    health:
+      show-details: when_authorized
+  metrics:
+    export:
+      prometheus:
+        enabled: true
+  server:
+    port: 8081
+
+jwt:
+  secret: ${JWT_SECRET:dev-secret-change-me}
+  expiration-ms: ${JWT_EXPIRATION_MS:86400000} # 24 hours
+
+server:
+  port: 8080
+
+logging:
+  level:
+    root: INFO
+    com.mynotes: INFO
