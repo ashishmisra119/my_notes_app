@@ -1,0 +1,8 @@
+[phases.setup]
+nixPkgs = ["...", "maven"]
+
+[phases.build]
+cmds = ["cd backend/my-notes-backend && mvn clean package -DskipTests"]
+
+[start]
+cmd = "cd backend/my-notes-backend && java -jar target/*.jar"
