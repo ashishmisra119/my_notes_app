@@ -36,6 +36,7 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-m2-
       - name: Build and test
+        working-directory: backend/my-notes-backend
         env:
           DB_HOST: 127.0.0.1
           DB_PORT: 5432
